@@ -1,6 +1,6 @@
 # Re-enable_rc6
 
-*Confirmed working with kernel __4.18.7__*
+*Confirmed working with kernel __4.18.8__*
 
 Since linux 4.16 the i915.enable_rc6 parameter has been disabled. This patch re-enables it so your computer won't crash. See https://bugs.freedesktop.org/show_bug.cgi?id=105962 for some background and information (although, if you're here you probably already know all that!). This patch is basically just the output of git revert on [this](https://github.com/torvalds/linux/commit/fb6db0f5bf1d4d3a4af6242e287fa795221ec5b8) commit of the master [linux](https://github.com/torvalds/linux/) branch. Slight modifications were done by hand to try minimally affect all progress since 4.15.16.
 
@@ -27,7 +27,7 @@ $ mkdir build
 $ cd build
 $ asp update linux
 $ asp checkout linux
-$ cd trunk
+$ cd repos/core-[ARCH]
 ```
 
 Copy the patch to this directory and edit `PKGBUILD` to include the patch at the end of the `source=` statement. At this point also change the `pkgbase` variable to give your custom kernel a different name. Here's the first few lines of my `PKGBUILD`:
@@ -38,7 +38,7 @@ Copy the patch to this directory and edit `PKGBUILD` to include the patch at the
 # Maintainer: Thomas Baechler <thomas@archlinux.org>
 
 pkgbase=linux-rc6       # Build kernel with a different name
-_srcver=4.18.7-arch1
+_srcver=4.18.8-arch1
 pkgver=${_srcver//-/.}
 pkgrel=1
 arch=(x86_64)
@@ -53,7 +53,7 @@ source=(
    60-linux.hook  # pacman hook for depmod
    90-linux.hook  # pacman hook for initramfs regeneration
    linux.preset   # standard config files for mkinitcpio ramdisk
-   re-enable_rc6.patch
+   re-enable_rc6.patch # renable i915.enable_rc6 kernel parameter
 )
 ```
 
@@ -82,6 +82,6 @@ $ git checkout 4.18.7
 
 This patch was made to fix my computer with the slim hope that others may benefit from the fix as well. As such I offer no promises that will work for you or that I will keep the patch up-to-date. That said, I like having an up-to-date kernel and any changes to the patch will be pushed here. If you have any contributions or suggestions I would be happy to read/incorporate them!
 
-## Authors
+## Author
 
-Arthur Eigenbrot
+Arthur Eigenbrot - aeigenbrot at nso.edu
