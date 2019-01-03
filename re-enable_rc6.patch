@@ -29,7 +29,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_params.c archlinux-linu
 +++ archlinux-linux.new/drivers/gpu/drm/i915/i915_params.c	2018-09-13 07:43:57.437676520 -0600
 @@ -44,6 +44,13 @@
  	"Use kernel modesetting [KMS] (0=disable, "
- 	"1=on, -1=force vga console preference [default])");                                   
+ 	"1=on, -1=force vga console preference [default])");
  
 +i915_param_named_unsafe(enable_rc6, int, 0400,
 +	"Enable power-saving render C-state 6. "
@@ -115,7 +115,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_drv.h archlinux-linux.
 +}
  
  /* intel_sdvo.c */
- bool intel_sdvo_init(struct drm_i915_private *dev_priv,
+ bool intel_sdvo_port_enabled(struct drm_i915_private *dev_priv,
 diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_guc.c archlinux-linux.new/drivers/gpu/drm/i915/intel_guc.c
 --- archlinux-linux.orig/drivers/gpu/drm/i915/intel_guc.c	2018-09-13 07:46:24.118646105 -0600
 +++ archlinux-linux.new/drivers/gpu/drm/i915/intel_guc.c	2018-09-13 07:43:57.437676520 -0600
