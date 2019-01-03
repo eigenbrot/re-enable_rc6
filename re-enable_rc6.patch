@@ -52,18 +52,6 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_params.h archlinux-linu
  	param(int, enable_dc, -1) \
  	param(int, enable_fbc, -1) \
  	param(int, enable_ppgtt, -1) \
-diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_pci.c archlinux-linux.new/drivers/gpu/drm/i915/i915_pci.c
---- archlinux-linux.orig/drivers/gpu/drm/i915/i915_pci.c	2018-09-13 07:46:24.118646105 -0600
-+++ archlinux-linux.new/drivers/gpu/drm/i915/i915_pci.c	2018-09-13 07:43:57.437676520 -0600
-@@ -220,8 +220,6 @@
- 	.has_hotplug = 1, \
- 	.ring_mask = RENDER_RING | BSD_RING, \
- 	.has_snoop = true, \
--	/* ilk does support rc6, but we do not implement [power] contexts */ \
--	.has_rc6 = 0, \
- 	GEN_DEFAULT_PIPEOFFSETS, \
- 	GEN_DEFAULT_PAGE_SIZES, \
- 	CURSOR_OFFSETS
 diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_pmu.c archlinux-linux.new/drivers/gpu/drm/i915/i915_pmu.c
 --- archlinux-linux.orig/drivers/gpu/drm/i915/i915_pmu.c	2018-09-13 07:46:24.118646105 -0600
 +++ archlinux-linux.new/drivers/gpu/drm/i915/i915_pmu.c	2018-09-13 11:46:59.797382316 -0600
@@ -403,7 +391,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
 -	if (!sanitize_rc6(dev_priv)) {
 +	if (!i915_modparams.enable_rc6) {
  		DRM_INFO("RC6 disabled, disabling runtime PM support\n");
- 		intel_runtime_pm_get(dev_priv);
+ 		pm_runtime_get(&dev_priv->drm.pdev->dev);
  	}
 @@ -8178,7 +8233,7 @@
  	if (IS_VALLEYVIEW(dev_priv))
@@ -411,7 +399,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
  
 -	if (!HAS_RC6(dev_priv))
 +	if (!i915_modparams.enable_rc6)
- 		intel_runtime_pm_put(dev_priv);
+ 		pm_runtime_put(&dev_priv->drm.pdev->dev);
  }
  
 @@ -8348,8 +8403,7 @@
