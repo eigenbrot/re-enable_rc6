@@ -1,7 +1,7 @@
 diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_drv.c archlinux-linux.new/drivers/gpu/drm/i915/i915_drv.c
 --- archlinux-linux.orig/drivers/gpu/drm/i915/i915_drv.c	2018-09-13 07:46:24.118646105 -0600
 +++ archlinux-linux.new/drivers/gpu/drm/i915/i915_drv.c	2018-09-13 07:43:57.437676520 -0600
-@@ -2907,6 +2907,6 @@
+@@ -2907,7 +2907,7 @@
  	struct drm_i915_private *dev_priv = to_i915(dev);
  	int ret;
  
@@ -9,7 +9,8 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_drv.c archlinux-linux.n
 +	if (WARN_ON_ONCE(!(dev_priv->gt_pm.rc6.enabled && intel_rc6_enabled())))
  		return -ENODEV;
  
-	if (WARN_ON_ONCE(!HAS_RUNTIME_PM(dev_priv)))
+ 	if (WARN_ON_ONCE(!HAS_RUNTIME_PM(dev_priv)))
+
 diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_drv.h archlinux-linux.new/drivers/gpu/drm/i915/i915_drv.h
 --- archlinux-linux.orig/drivers/gpu/drm/i915/i915_drv.h	2018-09-13 07:46:24.118646105 -0600
 +++ archlinux-linux.new/drivers/gpu/drm/i915/i915_drv.h	2018-09-13 07:43:57.437676520 -0600
@@ -48,7 +49,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_params.h archlinux-linu
 +	param(int, enable_rc6, -1) \
  	param(int, enable_dc, -1) \
  	param(int, enable_fbc, -1) \
- 	param(int, enable_ppgtt, -1) \
+ 	param(int, enable_psr, -1) \
 diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_pmu.c archlinux-linux.new/drivers/gpu/drm/i915/i915_pmu.c
 --- archlinux-linux.orig/drivers/gpu/drm/i915/i915_pmu.c	2018-09-13 07:46:24.118646105 -0600
 +++ archlinux-linux.new/drivers/gpu/drm/i915/i915_pmu.c	2018-09-13 11:46:59.797382316 -0600
@@ -97,8 +98,9 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_sysfs.c archlinux-linux
 diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_drv.h archlinux-linux.new/drivers/gpu/drm/i915/intel_drv.h
 --- archlinux-linux.orig/drivers/gpu/drm/i915/intel_drv.h	2018-09-13 07:46:24.118646105 -0600
 +++ archlinux-linux.new/drivers/gpu/drm/i915/intel_drv.h	2018-09-13 07:43:57.437676520 -0600
-@@ -2237,9 +2237,14 @@
- 				 const struct intel_crtc_state *crtc_state);
+@@ -2236,10 +2236,15 @@
+ void skl_write_cursor_wm(struct intel_plane *plane,
+ 			 const struct intel_crtc_state *crtc_state);
  bool ilk_disable_lp_wm(struct drm_device *dev);
 +int sanitize_rc6_option(struct drm_i915_private *dev_priv, int enable_rc6);
  int skl_check_pipe_max_pixel_rate(struct intel_crtc *intel_crtc,
@@ -112,6 +114,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_drv.h archlinux-linux.
  
  /* intel_sdvo.c */
  bool intel_sdvo_port_enabled(struct drm_i915_private *dev_priv,
+
 diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_guc.c archlinux-linux.new/drivers/gpu/drm/i915/intel_guc.c
 --- archlinux-linux.orig/drivers/gpu/drm/i915/intel_guc.c	2018-09-13 07:46:24.118646105 -0600
 +++ archlinux-linux.new/drivers/gpu/drm/i915/intel_guc.c	2018-09-13 07:43:57.437676520 -0600
