@@ -76,10 +76,13 @@ Finally, update your bootloader so that you can select the new kernel when you r
 
 ## Versions
 
-If/when the patch is updated to work with newer versions of the linux kernel I will tag those chages with the kernel version I used to test the patch. Thus you can get the version you need with `git checkout`; just find the tag with the closest version that is below your version. For example, the 4.20 update breaks for anything less than 4.20, so if you want to compile 4.19.9 then you'd need to do
+If/when the patch is updated to work with newer versions of the linux kernel I will tag those changes with the kernel version I used to test the patch. Thus you can get the version you need with `git checkout`; just find the tag with the closest version that is below your version. For example, the 4.20 update breaks for anything less than 4.20, so if you want to compile 4.19.9 then you'd need to do
 ```
 $ git checkout 4.18.7
 ```
+## Notes
+
+If you have the option of selecting your video drivers then I recommend using the official Intel driver (e.g., xf86-video-intel on Arch). When using other drivers or relying solely on Kernel mode setting I experience non-critical, but annoying bugs with my display. For example, sometimes after waking from sleep the display remains black until I switch to an unused virtual terminal and then back again. I don't know if this behavior is related to this patch or the rc6 parameter, but maybe it is and is easily avoided (at least in my case) by simply using the Intel driver.
 
 ## Questions/Contributions
 
