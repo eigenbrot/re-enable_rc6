@@ -16,11 +16,11 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_drv.h archlinux-linux.n
 +++ archlinux-linux.new/drivers/gpu/drm/i915/i915_drv.h	2018-09-13 07:43:57.437676520 -0600
 @@ -2478,7 +2478,6 @@
  
- #define HAS_RC6(dev_priv)		 ((dev_priv)->info.has_rc6)
- #define HAS_RC6p(dev_priv)		 ((dev_priv)->info.has_rc6p)
+ #define HAS_RC6(dev_priv)		 (INTEL_INFO(dev_priv)->has_rc6)
+ #define HAS_RC6p(dev_priv)		 (INTEL_INFO(dev_priv)->has_rc6p)
 -#define HAS_RC6pp(dev_priv)		 (false) /* HW was never validated */
  
- #define HAS_CSR(dev_priv)	((dev_priv)->info.display.has_csr)
+ #define HAS_CSR(dev_priv)	(INTEL_INFO(dev_priv)->display.has_csr)
  
 diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_params.c archlinux-linux.new/drivers/gpu/drm/i915/i915_params.c
 --- archlinux-linux.orig/drivers/gpu/drm/i915/i915_params.c	2018-09-13 07:46:24.118646105 -0600
