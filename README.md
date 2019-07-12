@@ -1,6 +1,6 @@
 # Re-enable_rc6
 
-*Confirmed working with kernel __5.1.16__*
+*Confirmed working with kernel __5.2__*
 
 **current version does NOT work with kernels <5.1**
 
@@ -40,7 +40,7 @@ Copy the patch to this directory and edit `PKGBUILD` to include the patch at the
 # Maintainer: Thomas Baechler <thomas@archlinux.org>
 
 pkgbase=linux-rc6       # Build kernel with a different name
-_srcver=5.1.16-arch1
+_srcver=5.2-arch1
 pkgver=${_srcver//-/.}
 pkgrel=1
 arch=(x86_64)
