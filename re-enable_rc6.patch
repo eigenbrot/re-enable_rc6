@@ -266,7 +266,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
 +		I915_WRITE(GEN9_PG_ENABLE, (rc6_mask & GEN6_RC_CTL_RC6_ENABLE) ?
 +				(GEN9_RENDER_PG_ENABLE | GEN9_MEDIA_PG_ENABLE) : 0);
  
- 	intel_uncore_forcewake_put(dev_priv, FORCEWAKE_ALL);
+ 	intel_uncore_forcewake_put(&dev_priv->uncore, FORCEWAKE_ALL);
  }
 @@ -7287,6 +7323,7 @@
  {
@@ -293,7 +293,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
 +			GEN7_RC_CTL_TO_MODE |
 +			rc6_mask);
  
- 	intel_uncore_forcewake_put(dev_priv, FORCEWAKE_ALL);
+ 	intel_uncore_forcewake_put(&dev_priv->uncore, FORCEWAKE_ALL);
  }
 @@ -7361,8 +7400,9 @@
  {
@@ -355,7 +355,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
 +
  	I915_WRITE(GEN6_RC_CONTROL, rc6_mode);
  
- 	intel_uncore_forcewake_put(dev_priv, FORCEWAKE_ALL);
+ 	intel_uncore_forcewake_put(&dev_priv->uncore, FORCEWAKE_ALL);
 @@ -7945,7 +7996,7 @@
  {
  	struct intel_engine_cs *engine;
@@ -378,7 +378,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
 +
 +	I915_WRITE(GEN6_RC_CONTROL, rc6_mode);
  
- 	intel_uncore_forcewake_put(dev_priv, FORCEWAKE_ALL);
+ 	intel_uncore_forcewake_put(&dev_priv->uncore, FORCEWAKE_ALL);
  }
 @@ -8512,7 +8567,7 @@
  	 * RPM depends on RC6 to save restore the GT HW context, so make RC6 a
