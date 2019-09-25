@@ -1,8 +1,8 @@
 # Re-enable_rc6
 
-*Confirmed working with kernel __5.2.11__*
+*Confirmed working with kernel __5.3.1__*
 
-**current version does NOT work with kernels <5.1**
+**current version does NOT work with kernels <5.3**
 
 Since linux 4.16 the i915.enable_rc6 parameter has been disabled. This patch re-enables it so your computer won't crash. See https://bugs.freedesktop.org/show_bug.cgi?id=105962 for some background and information (although, if you're here you probably already know all that!). This patch is basically just the output of git revert on [this](https://github.com/torvalds/linux/commit/fb6db0f5bf1d4d3a4af6242e287fa795221ec5b8) commit of the master [linux](https://github.com/torvalds/linux/) branch. Slight modifications were done by hand to try to minimally affect all progress since 4.15.16.
 
@@ -12,9 +12,12 @@ Just download the patch and use it. See below for two ways you might be compilin
 
 ### From source
 
+**!NOTE!** Since 5.3 the patch only works on the version tagged branch of the main kernel.
+
 ```
 $ git clone https://github.com/torvalds/linux.git
 $ cd linux
+$ git checkout v5.3
 $ patch -p1 < re-enable_rc6.patch
 ```
 
@@ -40,7 +43,7 @@ Copy the patch to this directory and edit `PKGBUILD` to include the patch at the
 # Maintainer: Thomas Baechler <thomas@archlinux.org>
 
 pkgbase=linux-rc6       # Build kernel with a different name
-_srcver=5.2.11-arch1
+_srcver=5.3.1-arch1
 pkgver=${_srcver//-/.}
 pkgrel=1
 arch=(x86_64)
