@@ -95,26 +95,9 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/i915_sysfs.c archlinux-linux
  }
  
  static ssize_t
-diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_drv.h archlinux-linux.new/drivers/gpu/drm/i915/intel_drv.h
---- archlinux-linux.orig/drivers/gpu/drm/i915/intel_drv.h	2019-07-12 14:06:33.692489198 -0600
-+++ archlinux-linux.new/drivers/gpu/drm/i915/intel_drv.h	2019-07-12 14:06:04.078946949 -0600
-@@ -1821,6 +1821,13 @@
- void intel_dp_start_link_train(struct intel_dp *intel_dp);
- void intel_dp_stop_link_train(struct intel_dp *intel_dp);
- 
-+/* re-enable rc6 support */
-+int sanitize_rc6_option(struct drm_i915_private *dev_priv, int enable_rc6);
-+static inline int intel_rc6_enabled(void)
-+{
-+       return i915_modparams.enable_rc6;
-+}
-+  
- /* intel_vdsc.c */
- int intel_dp_compute_dsc_params(struct intel_dp *intel_dp,
- 				struct intel_crtc_state *pipe_config);
-diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_guc.c archlinux-linux.new/drivers/gpu/drm/i915/intel_guc.c
---- archlinux-linux.orig/drivers/gpu/drm/i915/intel_guc.c	2018-09-13 07:46:24.118646105 -0600
-+++ archlinux-linux.new/drivers/gpu/drm/i915/intel_guc.c	2018-09-13 07:43:57.437676520 -0600
+diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/gt/uc/intel_guc.c archlinux-linux.new/drivers/gpu/drm/i915/intel_guc.c
+--- archlinux-linux.orig/drivers/gpu/drm/i915/gt/uc/intel_guc.c	2018-09-13 07:46:24.118646105 -0600
++++ archlinux-linux.new/drivers/gpu/drm/i915/gt/uc/intel_guc.c	2018-09-13 07:43:57.437676520 -0600
 @@ -512,8 +512,9 @@
  	u32 action[2];
  
@@ -167,7 +150,7 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
  static bool bxt_check_bios_rc6_setup(struct drm_i915_private *dev_priv)
  {
  	bool enable_rc6 = true;
-@@ -7008,30 +7031,42 @@
+@@ -7026,32 +7049,42 @@
  	return enable_rc6;
  }
  
@@ -180,8 +163,10 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
 +		return 0;
  
 -	/* Powersaving is controlled by the host when inside a VM */
--	if (intel_vgpu_active(i915))
+-	if (intel_vgpu_active(i915)) {
 -		info->has_rc6 = 0;
+-		info->has_rps = false;
+-	}
 +	if (!enable_rc6)
 +		return 0;
  
@@ -398,16 +383,6 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
  		pm_runtime_put(&dev_priv->drm.pdev->dev);
  }
  
-@@ -8721,8 +8776,7 @@
- 
- 	mutex_lock(&dev_priv->pcu_lock);
- 
--	if (HAS_RC6(dev_priv))
--		intel_enable_rc6(dev_priv);
-+	intel_enable_rc6(dev_priv);
- 	intel_enable_rps(dev_priv);
- 	if (HAS_LLC(dev_priv))
- 		intel_enable_llc_pstate(dev_priv);
 @@ -10043,7 +10097,7 @@
  	unsigned int i;
  	u32 mul, div;
@@ -417,16 +392,3 @@ diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_pm.c archlinux-linux.n
  		return 0;
  
  	/*
-diff -ura archlinux-linux.orig/drivers/gpu/drm/i915/intel_uncore.c archlinux-linux.new/drivers/gpu/drm/i915/intel_uncore.c
---- archlinux-linux.orig/drivers/gpu/drm/i915/intel_uncore.c	2018-09-13 07:46:24.118646105 -0600
-+++ archlinux-linux.new/drivers/gpu/drm/i915/intel_uncore.c	2018-09-13 07:43:57.447676586 -0600
-@@ -535,6 +535,9 @@
- 
- void intel_uncore_sanitize(struct drm_i915_private *dev_priv)
- {
-+	i915_modparams.enable_rc6 =
-+		sanitize_rc6_option(dev_priv, i915_modparams.enable_rc6);
-+
- 	/* BIOS often leaves RC6 enabled, but disable it for hw init */
- 	intel_sanitize_gt_powersave(dev_priv);
- }
