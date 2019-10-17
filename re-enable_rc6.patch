@@ -1,8 +1,8 @@
 diff --git a/drivers/gpu/drm/i915/i915_drv.c b/drivers/gpu/drm/i915/i915_drv.c
-index bac1ee94f63f..303f2b1288c4 100644
+index 5b895df09ebf..1cb8869b7f87 100644
 --- a/drivers/gpu/drm/i915/i915_drv.c
 +++ b/drivers/gpu/drm/i915/i915_drv.c
-@@ -2907,7 +2907,7 @@ static int intel_runtime_suspend(struct device *kdev)
+@@ -2912,7 +2912,7 @@ static int intel_runtime_suspend(struct device *kdev)
  	struct intel_runtime_pm *rpm = &dev_priv->runtime_pm;
  	int ret;
  
@@ -12,10 +12,10 @@ index bac1ee94f63f..303f2b1288c4 100644
  
  	if (WARN_ON_ONCE(!HAS_RUNTIME_PM(dev_priv)))
 diff --git a/drivers/gpu/drm/i915/i915_drv.h b/drivers/gpu/drm/i915/i915_drv.h
-index fe7a6ec2c199..810a5131ef56 100644
+index 94b91a952699..05d9cd4aa72e 100644
 --- a/drivers/gpu/drm/i915/i915_drv.h
 +++ b/drivers/gpu/drm/i915/i915_drv.h
-@@ -2312,7 +2312,6 @@ IS_SUBPLATFORM(const struct drm_i915_private *i915,
+@@ -2313,7 +2313,6 @@ IS_SUBPLATFORM(const struct drm_i915_private *i915,
  
  #define HAS_RC6(dev_priv)		 (INTEL_INFO(dev_priv)->has_rc6)
  #define HAS_RC6p(dev_priv)		 (INTEL_INFO(dev_priv)->has_rc6p)
