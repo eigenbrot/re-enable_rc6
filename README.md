@@ -1,6 +1,6 @@
 # Re-enable_rc6
 
-*Confirmed working with kernel __5.3.7__*
+*Confirmed working with kernel __5.3.8__*
 
 **current version does NOT work with kernels <5.3**
 
@@ -43,8 +43,7 @@ Copy the patch to this directory and edit `PKGBUILD` to include the patch at the
 # Maintainer: Thomas Baechler <thomas@archlinux.org>
 
 pkgbase=linux-rc6       # Build kernel with a different name
-_srcver=5.3.7-arch1
-pkgver=${_srcver//-/.}
+pkgver=5.3.8.1
 pkgrel=1
 arch=(x86_64)
 url="https://git.archlinux.org/linux.git/log/?h=v$_srcver"
@@ -55,9 +54,6 @@ _srcname=archlinux-linux
 source=(
   "$_srcname::git+https://git.archlinux.org/linux.git?signed#tag=v$_srcver"
    config         # the main kernel config file
-   60-linux.hook  # pacman hook for depmod
-   90-linux.hook  # pacman hook for initramfs regeneration
-   linux.preset   # standard config files for mkinitcpio ramdisk
    re-enable_rc6.patch # renable i915.enable_rc6 kernel parameter
 )
 ...
