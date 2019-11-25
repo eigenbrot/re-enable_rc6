@@ -1,10 +1,52 @@
+diff --git a/drivers/gpu/drm/i915/display/intel_display.h b/drivers/gpu/drm/i915/display/intel_display.h
+index 01fa87ad3270..f73a9c3f37f8 100644
+--- a/drivers/gpu/drm/i915/display/intel_display.h
++++ b/drivers/gpu/drm/i915/display/intel_display.h
+@@ -27,6 +27,7 @@
+ 
+ #include <drm/drm_util.h>
+ #include <drm/i915_drm.h>
++#include "i915_params.h"
+ 
+ enum link_m_n_set;
+ struct dpll;
+@@ -538,6 +539,13 @@ unsigned int i9xx_plane_max_stride(struct intel_plane *plane,
+ 				   unsigned int rotation);
+ int bdw_get_pipemisc_bpp(struct intel_crtc *crtc);
+ 
++/* re-enable rc6 support */
++int sanitize_rc6_option(struct drm_i915_private *dev_priv, int enable_rc6);
++static inline int intel_rc6_enabled(void)
++{
++       return i915_modparams.enable_rc6;
++ }           
++
+ struct intel_display_error_state *
+ intel_display_capture_error_state(struct drm_i915_private *dev_priv);
+ void intel_display_print_error_state(struct drm_i915_error_state_buf *e,
+diff --git a/drivers/gpu/drm/i915/gt/uc/intel_guc.c b/drivers/gpu/drm/i915/gt/uc/intel_guc.c
+index 249c747e9756..dcfae95719fd 100644
+--- a/drivers/gpu/drm/i915/gt/uc/intel_guc.c
++++ b/drivers/gpu/drm/i915/gt/uc/intel_guc.c
+@@ -432,8 +432,9 @@ int intel_guc_sample_forcewake(struct intel_guc *guc)
+ 	u32 action[2];
+ 
+ 	action[0] = INTEL_GUC_ACTION_SAMPLE_FORCEWAKE;
+-	/* WaRsDisableCoarsePowerGating:skl,cnl */
+-	if (!HAS_RC6(dev_priv) || NEEDS_WaRsDisableCoarsePowerGating(dev_priv))
++	/* WaRsDisableCoarsePowerGating:skl,bxt */
++	if (!intel_rc6_enabled() ||
++	    NEEDS_WaRsDisableCoarsePowerGating(dev_priv))
+ 		action[1] = 0;
+ 	else
+ 		/* bit 0 and 1 are for Render and Media domain separately */
 diff --git a/drivers/gpu/drm/i915/i915_drv.c b/drivers/gpu/drm/i915/i915_drv.c
-index 5b895df09ebf..1cb8869b7f87 100644
+index 3d717e282908..79f4af1d86ba 100644
 --- a/drivers/gpu/drm/i915/i915_drv.c
 +++ b/drivers/gpu/drm/i915/i915_drv.c
-@@ -2912,7 +2912,7 @@ static int intel_runtime_suspend(struct device *kdev)
+@@ -2594,7 +2594,7 @@ static int intel_runtime_suspend(struct device *kdev)
  	struct intel_runtime_pm *rpm = &dev_priv->runtime_pm;
- 	int ret;
+ 	int ret = 0;
  
 -	if (WARN_ON_ONCE(!(dev_priv->gt_pm.rc6.enabled && HAS_RC6(dev_priv))))
 +	if (WARN_ON_ONCE(!(dev_priv->gt_pm.rc6.enabled && intel_rc6_enabled())))
@@ -12,10 +54,10 @@ index 5b895df09ebf..1cb8869b7f87 100644
  
  	if (WARN_ON_ONCE(!HAS_RUNTIME_PM(dev_priv)))
 diff --git a/drivers/gpu/drm/i915/i915_drv.h b/drivers/gpu/drm/i915/i915_drv.h
-index 94b91a952699..05d9cd4aa72e 100644
+index 89b6112bd66b..02d291bb6fb2 100644
 --- a/drivers/gpu/drm/i915/i915_drv.h
 +++ b/drivers/gpu/drm/i915/i915_drv.h
-@@ -2313,7 +2313,6 @@ IS_SUBPLATFORM(const struct drm_i915_private *i915,
+@@ -2155,7 +2155,6 @@ IS_SUBPLATFORM(const struct drm_i915_private *i915,
  
  #define HAS_RC6(dev_priv)		 (INTEL_INFO(dev_priv)->has_rc6)
  #define HAS_RC6p(dev_priv)		 (INTEL_INFO(dev_priv)->has_rc6p)
@@ -24,7 +66,7 @@ index 94b91a952699..05d9cd4aa72e 100644
  #define HAS_RPS(dev_priv)	(INTEL_INFO(dev_priv)->has_rps)
  
 diff --git a/drivers/gpu/drm/i915/i915_params.c b/drivers/gpu/drm/i915/i915_params.c
-index 5b07766a1c26..2224f72a25d7 100644
+index 296452f9efe4..b3b07b1d7f8d 100644
 --- a/drivers/gpu/drm/i915/i915_params.c
 +++ b/drivers/gpu/drm/i915/i915_params.c
 @@ -44,6 +44,13 @@ i915_param_named(modeset, int, 0400,
@@ -42,7 +84,7 @@ index 5b07766a1c26..2224f72a25d7 100644
  	"Enable power-saving display C-states. "
  	"(-1=auto [default]; 0=disable; 1=up to DC5; 2=up to DC6)");
 diff --git a/drivers/gpu/drm/i915/i915_params.h b/drivers/gpu/drm/i915/i915_params.h
-index a4770ce46bd2..001a9a5f7631 100644
+index d29ade3b7de6..9737334b7a53 100644
 --- a/drivers/gpu/drm/i915/i915_params.h
 +++ b/drivers/gpu/drm/i915/i915_params.h
 @@ -48,6 +48,7 @@ struct drm_printer;
@@ -54,10 +96,10 @@ index a4770ce46bd2..001a9a5f7631 100644
  	param(int, enable_fbc, -1) \
  	param(int, enable_psr, -1) \
 diff --git a/drivers/gpu/drm/i915/i915_pmu.c b/drivers/gpu/drm/i915/i915_pmu.c
-index 8fe46ee920a0..66a77b057b86 100644
+index 212acaef581e..d866ca76ec6c 100644
 --- a/drivers/gpu/drm/i915/i915_pmu.c
 +++ b/drivers/gpu/drm/i915/i915_pmu.c
-@@ -432,12 +432,13 @@ static u64 __get_rc6(struct drm_i915_private *i915)
+@@ -436,12 +436,13 @@ static u64 __get_rc6(struct intel_gt *gt)
  				     VLV_GT_RENDER_RC6 :
  				     GEN6_GT_GFX_RC6);
  
@@ -77,7 +119,7 @@ index 8fe46ee920a0..66a77b057b86 100644
  }
  
 diff --git a/drivers/gpu/drm/i915/i915_sysfs.c b/drivers/gpu/drm/i915/i915_sysfs.c
-index ecac1c386109..6d8d5907c694 100644
+index d8a3b180c084..28488ad87280 100644
 --- a/drivers/gpu/drm/i915/i915_sysfs.c
 +++ b/drivers/gpu/drm/i915/i915_sysfs.c
 @@ -57,18 +57,7 @@ static u32 calc_residency(struct drm_i915_private *dev_priv,
@@ -100,53 +142,22 @@ index ecac1c386109..6d8d5907c694 100644
  }
  
  static ssize_t
-diff --git a/drivers/gpu/drm/i915/intel_drv.h b/drivers/gpu/drm/i915/intel_drv.h
-index f11979879e7b..158c3d742caf 100644
---- a/drivers/gpu/drm/i915/intel_drv.h
-+++ b/drivers/gpu/drm/i915/intel_drv.h
-@@ -1613,4 +1613,11 @@ unsigned int i9xx_plane_max_stride(struct intel_plane *plane,
- 				   unsigned int rotation);
- int bdw_get_pipemisc_bpp(struct intel_crtc *crtc);
- 
-+/* re-enable rc6 support */
-+int sanitize_rc6_option(struct drm_i915_private *dev_priv, int enable_rc6);
-+static inline int intel_rc6_enabled(void)
-+{
-+       return i915_modparams.enable_rc6;
-+}            
-+
- #endif /* __INTEL_DRV_H__ */
-diff --git a/drivers/gpu/drm/i915/intel_guc.c b/drivers/gpu/drm/i915/intel_guc.c
-index c40a6efdd33a..273bdcc0ffe5 100644
---- a/drivers/gpu/drm/i915/intel_guc.c
-+++ b/drivers/gpu/drm/i915/intel_guc.c
-@@ -501,8 +501,9 @@ int intel_guc_sample_forcewake(struct intel_guc *guc)
- 	u32 action[2];
- 
- 	action[0] = INTEL_GUC_ACTION_SAMPLE_FORCEWAKE;
--	/* WaRsDisableCoarsePowerGating:skl,cnl */
--	if (!HAS_RC6(dev_priv) || NEEDS_WaRsDisableCoarsePowerGating(dev_priv))
-+	/* WaRsDisableCoarsePowerGating:skl,bxt */
-+	if (!intel_rc6_enabled() ||
-+	    NEEDS_WaRsDisableCoarsePowerGating(dev_priv))
- 		action[1] = 0;
- 	else
- 		/* bit 0 and 1 are for Render and Media domain separately */
 diff --git a/drivers/gpu/drm/i915/intel_pm.c b/drivers/gpu/drm/i915/intel_pm.c
-index d9a7a13ce32a..714a69b2bc20 100644
+index 2efe1d12d5a9..55aa46024446 100644
 --- a/drivers/gpu/drm/i915/intel_pm.c
 +++ b/drivers/gpu/drm/i915/intel_pm.c
-@@ -63,6 +63,9 @@
-  * which brings the most power savings; deeper states save more power, but
+@@ -65,6 +65,10 @@
   * require higher latency to switch to and wake up.
   */
+ 
 +#define INTEL_RC6_ENABLE			(1<<0)
 +#define INTEL_RC6p_ENABLE			(1<<1)
 +#define INTEL_RC6pp_ENABLE			(1<<2)
- 
++
  static void gen9_init_clock_gating(struct drm_i915_private *dev_priv)
  {
-@@ -6975,6 +6978,26 @@ static void valleyview_disable_rps(struct drm_i915_private *dev_priv)
+ 	if (HAS_LLC(dev_priv)) {
+@@ -6971,6 +6975,26 @@ static void valleyview_disable_rps(struct drm_i915_private *dev_priv)
  	I915_WRITE(GEN6_RP_CONTROL, 0);
  }
  
@@ -173,7 +184,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  static bool bxt_check_bios_rc6_setup(struct drm_i915_private *dev_priv)
  {
  	bool enable_rc6 = true;
-@@ -7035,32 +7058,42 @@ static bool bxt_check_bios_rc6_setup(struct drm_i915_private *dev_priv)
+@@ -7031,32 +7055,42 @@ static bool bxt_check_bios_rc6_setup(struct drm_i915_private *dev_priv)
  	return enable_rc6;
  }
  
@@ -223,19 +234,19 @@ index d9a7a13ce32a..714a69b2bc20 100644
 +			DRM_DEBUG_DRIVER("Adjusting RC6 mask to %d "
 +					 "(requested %d, valid %d)\n",
 +					 enable_rc6 & mask, enable_rc6, mask);
-+
+ 
+-	return info->has_rc6;
 +		return enable_rc6 & mask;
 +	}
 +
 +	if (IS_IVYBRIDGE(dev_priv))
 +		return (INTEL_RC6_ENABLE | INTEL_RC6p_ENABLE);
- 
--	return info->has_rc6;
++
 +	return INTEL_RC6_ENABLE;
  }
  
  static void gen6_init_rps_frequencies(struct drm_i915_private *dev_priv)
-@@ -7225,7 +7258,7 @@ static void gen9_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7221,7 +7255,7 @@ static void gen9_enable_rc6(struct drm_i915_private *dev_priv)
  {
  	struct intel_engine_cs *engine;
  	enum intel_engine_id id;
@@ -244,7 +255,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  
  	/* 1a: Software RC state - RC0 */
  	I915_WRITE(GEN6_RC_STATE, 0);
-@@ -7286,6 +7319,9 @@ static void gen9_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7282,6 +7316,9 @@ static void gen9_enable_rc6(struct drm_i915_private *dev_priv)
  	I915_WRITE(GEN9_RENDER_PG_IDLE_HYSTERESIS, 250);
  
  	/* 3a: Enable RC6 */
@@ -254,7 +265,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  	I915_WRITE(GEN6_RC6_THRESHOLD, 37500); /* 37.5/125ms per EI */
  
  	/* WaRsUseTimeoutMode:cnl (pre-prod) */
-@@ -7295,9 +7331,7 @@ static void gen9_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7291,9 +7328,7 @@ static void gen9_enable_rc6(struct drm_i915_private *dev_priv)
  		rc6_mode = GEN6_RC_CTL_EI_MODE(1);
  
  	I915_WRITE(GEN6_RC_CONTROL,
@@ -265,7 +276,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  
  	/*
  	 * 3b: Enable Coarse Power Gating only when RC6 is enabled.
-@@ -7306,8 +7340,8 @@ static void gen9_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7302,8 +7337,8 @@ static void gen9_enable_rc6(struct drm_i915_private *dev_priv)
  	if (NEEDS_WaRsDisableCoarsePowerGating(dev_priv))
  		I915_WRITE(GEN9_PG_ENABLE, 0);
  	else
@@ -276,7 +287,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  
  	intel_uncore_forcewake_put(&dev_priv->uncore, FORCEWAKE_ALL);
  }
-@@ -7316,6 +7350,7 @@ static void gen8_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7312,6 +7347,7 @@ static void gen8_enable_rc6(struct drm_i915_private *dev_priv)
  {
  	struct intel_engine_cs *engine;
  	enum intel_engine_id id;
@@ -284,7 +295,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  
  	/* 1a: Software RC state - RC0 */
  	I915_WRITE(GEN6_RC_STATE, 0);
-@@ -7337,11 +7372,13 @@ static void gen8_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7333,11 +7369,13 @@ static void gen8_enable_rc6(struct drm_i915_private *dev_priv)
  	I915_WRITE(GEN6_RC6_THRESHOLD, 625); /* 800us/1.28 for TO */
  
  	/* 3: Enable RC6 */
@@ -302,7 +313,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  
  	intel_uncore_forcewake_put(&dev_priv->uncore, FORCEWAKE_ALL);
  }
-@@ -7390,8 +7427,9 @@ static void gen6_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7386,8 +7424,9 @@ static void gen6_enable_rc6(struct drm_i915_private *dev_priv)
  {
  	struct intel_engine_cs *engine;
  	enum intel_engine_id id;
@@ -313,10 +324,11 @@ index d9a7a13ce32a..714a69b2bc20 100644
  	int ret;
  
  	I915_WRITE(GEN6_RC_STATE, 0);
-@@ -7426,12 +7464,22 @@ static void gen6_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7422,12 +7461,23 @@ static void gen6_enable_rc6(struct drm_i915_private *dev_priv)
  	I915_WRITE(GEN6_RC6p_THRESHOLD, 150000);
  	I915_WRITE(GEN6_RC6pp_THRESHOLD, 64000); /* unused */
  
++
 +	/* Check if we are enabling RC6 */
 +	rc6_mode = intel_rc6_enabled();
 +	if (rc6_mode & INTEL_RC6_ENABLE)
@@ -341,7 +353,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  	I915_WRITE(GEN6_RC_CONTROL,
  		   rc6_mask |
  		   GEN6_RC_CTL_EI_MODE(1) |
-@@ -7898,7 +7946,7 @@ static void cherryview_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7894,7 +7944,7 @@ static void cherryview_enable_rc6(struct drm_i915_private *dev_priv)
  {
  	struct intel_engine_cs *engine;
  	enum intel_engine_id id;
@@ -350,7 +362,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  
  	gtfifodbg = I915_READ(GTFIFODBG) & ~(GT_FIFO_SBDEDICATE_FREE_ENTRY_CHV |
  					     GT_FIFO_FREE_ENTRIES_CHV);
-@@ -7939,9 +7987,10 @@ static void cherryview_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7935,8 +7985,8 @@ static void cherryview_enable_rc6(struct drm_i915_private *dev_priv)
  	pcbr = I915_READ(VLV_PCBR);
  
  	/* 3: Enable RC6 */
@@ -359,11 +371,9 @@ index d9a7a13ce32a..714a69b2bc20 100644
 +	if ((intel_rc6_enabled() & INTEL_RC6_ENABLE) &&
 +	    (pcbr >> VLV_PCBR_ADDR_SHIFT))
  		rc6_mode = GEN7_RC_CTL_TO_MODE;
-+
  	I915_WRITE(GEN6_RC_CONTROL, rc6_mode);
  
- 	intel_uncore_forcewake_put(&dev_priv->uncore, FORCEWAKE_ALL);
-@@ -7995,7 +8044,7 @@ static void valleyview_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -7991,7 +8041,7 @@ static void valleyview_enable_rc6(struct drm_i915_private *dev_priv)
  {
  	struct intel_engine_cs *engine;
  	enum intel_engine_id id;
@@ -372,7 +382,7 @@ index d9a7a13ce32a..714a69b2bc20 100644
  
  	valleyview_check_pctx(dev_priv);
  
-@@ -8028,8 +8077,12 @@ static void valleyview_enable_rc6(struct drm_i915_private *dev_priv)
+@@ -8024,8 +8074,13 @@ static void valleyview_enable_rc6(struct drm_i915_private *dev_priv)
  				      VLV_MEDIA_RC6_COUNT_EN |
  				      VLV_RENDER_RC6_COUNT_EN));
  
@@ -384,10 +394,11 @@ index d9a7a13ce32a..714a69b2bc20 100644
 +	intel_print_rc6_info(dev_priv, rc6_mode);
 +
 +	I915_WRITE(GEN6_RC_CONTROL, rc6_mode);
++ 
  
  	intel_uncore_forcewake_put(&dev_priv->uncore, FORCEWAKE_ALL);
  }
-@@ -8564,7 +8617,7 @@ void intel_init_gt_powersave(struct drm_i915_private *dev_priv)
+@@ -8654,7 +8709,7 @@ void intel_init_gt_powersave(struct drm_i915_private *dev_priv)
  	 * RPM depends on RC6 to save restore the GT HW context, so make RC6 a
  	 * requirement.
  	 */
@@ -396,16 +407,16 @@ index d9a7a13ce32a..714a69b2bc20 100644
  		DRM_INFO("RC6 disabled, disabling runtime PM support\n");
  		pm_runtime_get(&dev_priv->drm.pdev->dev);
  	}
-@@ -8607,7 +8660,7 @@ void intel_cleanup_gt_powersave(struct drm_i915_private *dev_priv)
- 	if (IS_VALLEYVIEW(dev_priv))
- 		valleyview_cleanup_gt_powersave(dev_priv);
+@@ -8701,7 +8756,7 @@ void intel_cleanup_gt_powersave(struct drm_i915_private *dev_priv)
+ 
+ 	i915_rc6_ctx_wa_cleanup(dev_priv);
  
 -	if (!HAS_RC6(dev_priv))
 +	if (!i915_modparams.enable_rc6)
  		pm_runtime_put(&dev_priv->drm.pdev->dev);
  }
  
-@@ -8763,8 +8816,7 @@ void intel_enable_gt_powersave(struct drm_i915_private *dev_priv)
+@@ -8869,8 +8924,7 @@ void intel_enable_gt_powersave(struct drm_i915_private *dev_priv)
  
  	mutex_lock(&dev_priv->gt_pm.rps.lock);
  
@@ -415,17 +426,14 @@ index d9a7a13ce32a..714a69b2bc20 100644
  	if (HAS_RPS(dev_priv))
  		intel_enable_rps(dev_priv);
  	if (HAS_LLC(dev_priv))
-diff --git a/drivers/gpu/drm/i915/intel_uncore.c b/drivers/gpu/drm/i915/intel_uncore.c
-index da33aa672c3d..1dc8e2b06cee 100644
---- a/drivers/gpu/drm/i915/intel_uncore.c
-+++ b/drivers/gpu/drm/i915/intel_uncore.c
-@@ -539,6 +539,9 @@ void intel_uncore_runtime_resume(struct intel_uncore *uncore)
+@@ -9972,7 +10026,7 @@ u64 intel_rc6_residency_ns(struct drm_i915_private *dev_priv,
+ 	unsigned int i;
+ 	u32 mul, div;
  
- void intel_uncore_sanitize(struct drm_i915_private *dev_priv)
- {
-+	i915_modparams.enable_rc6 =
-+		sanitize_rc6_option(dev_priv, i915_modparams.enable_rc6);
-+
- 	/* BIOS often leaves RC6 enabled, but disable it for hw init */
- 	intel_sanitize_gt_powersave(dev_priv);
- }
+-	if (!HAS_RC6(dev_priv))
++	if (!i915_modparams.enable_rc6)
+ 		return 0;
+ 
+ 	/*
+-- 
+2.24.0
