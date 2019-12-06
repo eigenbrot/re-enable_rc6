@@ -1,10 +1,10 @@
 # Re-enable_rc6
 
-*Confirmed working with kernel __5.4__*
+*Confirmed working with kernel __5.4.2__*
 
 **current version does NOT work with kernels <5.4**
 
-Since linux 4.16 the i915.enable_rc6 parameter has been disabled. This patch re-enables it so your computer won't crash. See https://bugs.freedesktop.org/show_bug.cgi?id=105962 for some background and information (although, if you're here you probably already know all that!). This patch is basically just the output of git revert on [this](https://github.com/torvalds/linux/commit/fb6db0f5bf1d4d3a4af6242e287fa795221ec5b8) commit of the master [linux](https://github.com/torvalds/linux/) branch. Slight modifications were done by hand to try to minimally affect all progress since 4.15.16.
+Since linux 4.16 the i915.enable_rc6 parameter has been disabled. This patch re-enables it so your computer won't crash. See https://gitlab.freedesktop.org/drm/intel/issues/100 for some background and information (although, if you're here you probably already know all that!). This patch is basically just the output of git revert on [this](https://github.com/torvalds/linux/commit/fb6db0f5bf1d4d3a4af6242e287fa795221ec5b8) commit of the master [linux](https://github.com/torvalds/linux/) branch. Slight modifications were done by hand to try to minimally affect all progress since 4.15.16.
 
 ## Getting Started
 
@@ -43,7 +43,7 @@ Copy the patch to this directory and edit `PKGBUILD` to include the patch at the
 # Maintainer: Thomas Baechler <thomas@archlinux.org>
 
 pkgbase=linux-rc6       # Build kernel with a different name
-pkgver=5.4
+pkgver=5.4.2.arch1
 pkgrel=1
 arch=(x86_64)
 url="https://git.archlinux.org/linux.git/log/?h=v$_srcver"
