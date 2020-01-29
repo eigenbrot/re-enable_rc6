@@ -1,5 +1,12 @@
 # Re-enable_rc6
 
+## IMPORTANT NOTE
+*1.29.2020*
+
+**Since 5.4.0 it appears that this problem is somehow fixed in the stock kernel. As such I will no longer be maintaining this repo. Go be free!**
+
+---
+
 *Confirmed working with kernel __5.4.8__*
 
 **current version does NOT work with kernels <5.4**
